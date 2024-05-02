@@ -1,12 +1,12 @@
 #include "ExampleStorage.h"
 
 
-bool ExampleStorage::Store(ParkingData data) 
+bool ExampleStorage::store(ParkingData data) 
 {
     return true;
 }
 
-std::optional<ParkingData> ExampleStorage::Retrieve(int spotID) 
+std::optional<ParkingData> ExampleStorage::retrieve(int spotID) 
 {
     return std::nullopt;
 }

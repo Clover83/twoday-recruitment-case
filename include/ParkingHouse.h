@@ -1,6 +1,7 @@
 #pragma once
 
 #include <unordered_map>
+#include <memory>
 #include "ParkingData.h"
 #include "IParkingStorage.h"
 
@@ -30,7 +31,7 @@ class ParkingHouse
 {
 public:
     ParkingHouse();
-    ParkingHouse(ParkingHouseInfo data, IParkingStorage storageInterface);
+    ParkingHouse(ParkingHouseInfo data, std::shared_ptr<IParkingStorage> storageInterface);
 
     RegistrationReturn registerEntry(ParkingData data);
     RegistrationReturn registerExit(int spotID);
@@ -39,6 +40,6 @@ public:
 private:
     ParkingHouseInfo houseInfo;
     int totalSpots;
-    IParkingStorage storageInterface;
+    std::shared_ptr<IParkingStorage> storageInterface;
 
 };

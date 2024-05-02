@@ -6,9 +6,10 @@ struct TestingInstance
 {
     ParkingHouseInfo info;
     ParkingHouse house;
-    ExampleStorage storage;
+    std::shared_ptr<ExampleStorage> storage;
     TestingInstance()
     {
+        storage = std::make_shared<ExampleStorage>();
         house = ParkingHouse(info, storage);
     }
 
@@ -21,21 +22,25 @@ struct TestingInstance
         userData.startTime = std::chrono::system_clock::to_time_t(now);
 
         house.registerEntry(userData);
-        auto ret = storage.retrieve(userData.spotID);
-        // if (ret)
-        // {
-        //     userData.
-        // }
+        auto ret = storage->retrieve(userData.spotID);
+        if (ret && userData == ret.value())
+        {
+            std::cout << "OK\n"; 
+            return;
+        }
+        std::cout << "ERROR: ENTRY FAILED\n";
+    }
+    
+    void testExit()
+    {
+
     }
 };
 
 
-void testExit()
-{
-
-}
 
 int main() 
 {
-    std::cout << "Hello World\n"; 
+    TestingInstance ti;
+    ti.testEntry();
 }

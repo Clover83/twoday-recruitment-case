@@ -5,7 +5,7 @@ ParkingHouse::ParkingHouse()
     totalSpots = houseInfo.numFloors * houseInfo.spotsPerFloor;
 }
 
-ParkingHouse::ParkingHouse(ParkingHouseInfo data, IParkingStorage storageInterface)
+ParkingHouse::ParkingHouse(ParkingHouseInfo data, std::shared_ptr<IParkingStorage> storageInterface)
     : houseInfo(data), storageInterface(storageInterface)
 {
     totalSpots = houseInfo.numFloors * houseInfo.spotsPerFloor;
@@ -18,12 +18,12 @@ RegistrationReturn ParkingHouse::registerEntry(ParkingData data)
         return RegistrationReturn::INVALID_ID;
     }
 
-    if (!data.validStartTime)
+    if (!data.startTime)
     {
         return RegistrationReturn::INVALID_START_DATE;
     }
 
-    storageInterface.store(data);
+    storageInterface->store(data);
 }
 
 RegistrationReturn ParkingHouse::registerExit(int spotID)

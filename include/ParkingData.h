@@ -8,12 +8,8 @@ struct ParkingData
 {
     int spotID = -1;
     std::string licensePlate = "";
-    std::time_t startTime;
-    std::time_t endTime;
-    bool validStartTime = false;
-    bool validEndTime = false;
-    //std::optional<std::time_t> startTime;
-    //std::optional<std::time_t> endTime;
+    std::optional<std::time_t> startTime;
+    std::optional<std::time_t> endTime;
 
 
     ParkingData() = default;
@@ -21,6 +17,13 @@ struct ParkingData
     {
         if (spotID != rhs.spotID)
             return false;
+        if (licensePlate != rhs.licensePlate)
+            return false;
+        if (startTime != rhs.startTime)
+            return false;
+        if (endTime != rhs.endTime)
+            return false;
+
         return true;
     }
 
