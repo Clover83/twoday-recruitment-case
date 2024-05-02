@@ -1,4 +1,5 @@
 #include <iostream>
+#include "gtest/gtest.h"
 #include "ParkingHouse.h"
 #include "ExampleStorage.h"
 
@@ -37,10 +38,19 @@ struct TestingInstance
     }
 };
 
+TEST(ExampleTest, TestOne)
+{
+    EXPECT_EQ(true, true);
+}
 
+TEST(ExampleTest, TestTwo)
+{
+    EXPECT_EQ(false, true);
+}
 
 int main() 
 {
     TestingInstance ti;
     ti.testEntry();
+    RUN_ALL_TESTS();
 }
