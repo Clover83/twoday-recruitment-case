@@ -1,7 +1,8 @@
 #include <iostream>
 #include "ParkingHouse.h"
 #include "ExampleStorage.h"
-class TestingInstance
+
+struct TestingInstance
 {
     ParkingHouseInfo info;
     ParkingHouse house;
@@ -18,6 +19,13 @@ class TestingInstance
         
         auto now = std::chrono::system_clock::now();
         userData.startTime = std::chrono::system_clock::to_time_t(now);
+
+        house.registerEntry(userData);
+        auto ret = storage.retrieve(userData.spotID);
+        // if (ret)
+        // {
+        //     userData.
+        // }
     }
 };
 

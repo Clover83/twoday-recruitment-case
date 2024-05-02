@@ -17,6 +17,12 @@ struct ParkingData
 
 
     ParkingData() = default;
+    bool operator==(ParkingData const& rhs)
+    {
+        if (spotID != rhs.spotID)
+            return false;
+        return true;
+    }
 
 };
 

@@ -23,7 +23,7 @@ RegistrationReturn ParkingHouse::registerEntry(ParkingData data)
         return RegistrationReturn::INVALID_START_DATE;
     }
 
-    storageInterface.Store(data);
+    storageInterface.store(data);
 }
 
 RegistrationReturn ParkingHouse::registerExit(int spotID)

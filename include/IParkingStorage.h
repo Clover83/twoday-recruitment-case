@@ -7,6 +7,6 @@ class IParkingStorage
 {
 public:
     virtual ~IParkingStorage() {}
-    virtual bool Store(ParkingData data);
-    virtual std::optional<ParkingData> Retrieve(int spotID);
+    virtual bool store(ParkingData data);
+    virtual std::optional<ParkingData> retrieve(int spotID);
 };
