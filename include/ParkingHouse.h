@@ -5,7 +5,6 @@
 #include "ParkingData.h"
 #include "IParkingStorage.h"
 
-
 struct ParkingHouseInfo
 {
     int numFloors = 3;
@@ -25,7 +24,6 @@ enum class RegistrationReturn
     COULD_NOT_STORE_DATA,
     COULD_NOT_RETRIEVE_DATA
 };
-
 
 class ParkingHouse
 {

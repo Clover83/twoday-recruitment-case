@@ -38,19 +38,9 @@ struct TestingInstance
     }
 };
 
-TEST(ExampleTest, TestOne)
-{
-    EXPECT_EQ(true, true);
-}
 
-TEST(ExampleTest, TestTwo)
+int main(int argc, char **argv) 
 {
-    EXPECT_EQ(false, true);
-}
-
-int main() 
-{
-    TestingInstance ti;
-    ti.testEntry();
+    testing::InitGoogleTest(&argc, argv);
     RUN_ALL_TESTS();
 }
