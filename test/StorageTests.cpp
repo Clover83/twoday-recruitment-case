@@ -26,7 +26,7 @@ TEST_F(StorageTests, StoreAndRetrieve)
 {
     ASSERT_TRUE(storage->store(mockData));
 
-    auto maybeData = storage->retrieve(mockData.spotID);
-    ASSERT_TRUE(maybeData);
+    auto maybeData = storage->retrieve(mockData);
+    ASSERT_TRUE(maybeData.has_value());
     ASSERT_TRUE(maybeData.value() == mockData);
 }

@@ -13,7 +13,7 @@ RegistrationResult ParkingHouse::registerEntry(ParkingData data)
         return RegistrationResult::INVALID_ID;
     }
 
-    if (!data.startTime)
+    if (!data.startTime.has_value())
     {
         return RegistrationResult::INVALID_START_DATE;
     }

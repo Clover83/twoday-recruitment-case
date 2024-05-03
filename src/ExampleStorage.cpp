@@ -3,10 +3,14 @@
 
 bool ExampleStorage::store(ParkingData data) 
 {
-    return true;
+    auto [_, wasInserted] = spots.insert({data.spotID, data});
+    return wasInserted;
 }
 
-std::optional<ParkingData> ExampleStorage::retrieve(int spotID) 
+std::optional<ParkingData> ExampleStorage::retrieve(ParkingData dataToSearchFor) 
 {
-    return std::nullopt;
+    auto foundSpot = spots.find(dataToSearchFor.spotID);
+    if (foundSpot == spots.end())
+        return std::nullopt;
+    return std::make_optional(foundSpot->second);
 }

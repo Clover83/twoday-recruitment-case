@@ -6,8 +6,8 @@ TEST(ParkingDataTests, InitCorrectness)
     ParkingData a;
     ParkingData b;
     ASSERT_TRUE(a == b);
-    ASSERT_FALSE(a.startTime);
-    ASSERT_FALSE(a.endTime);
+    ASSERT_FALSE(a.startTime.has_value());
+    ASSERT_FALSE(a.endTime.has_value());
 }
 
 TEST(ParkingDataTests, EqualityWithoutTime)

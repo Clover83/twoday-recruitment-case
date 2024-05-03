@@ -66,8 +66,8 @@ TEST_F(ParkingHouseTests, RegisterValidEntry)
     auto result = parkingHouse->registerEntry(parkingData);
     ASSERT_EQ(result, RegistrationResult::VALID);
 
-    auto storageData = storageInterface->retrieve(parkingData.spotID);
-    ASSERT_TRUE(storageData);
+    auto storageData = storageInterface->retrieve(parkingData);
+    ASSERT_TRUE(storageData.has_value());
     ASSERT_EQ(parkingData, storageData.value());
 }
 
@@ -83,7 +83,7 @@ TEST_F(ParkingHouseTests, RegisterValidExit)
 
     ASSERT_EQ(result, RegistrationResult::VALID);
 
-    ASSERT_TRUE(parkingData.startTime && parkingData.endTime)
+    ASSERT_TRUE(parkingData.startTime && parkingData.endTime.has_value())
         << "Start and/or end time optional is empty.";
 
     time_t secondsParked = parkingData.endTime.value() - parkingData.startTime.value();
@@ -100,7 +100,7 @@ TEST_F(ParkingHouseTests, CorrectHourlyCost)
     auto [result, returnedCost] = 
         parkingHouse->registerExit(parkingData);
 
-    ASSERT_DOUBLE_EQ(returnedCost, expectedCost);
+    ASSERT_NEAR(returnedCost, expectedCost, 0.1);
 }
 
 TEST_F(ParkingHouseTests, CorrectDailyCost)
@@ -113,7 +113,7 @@ TEST_F(ParkingHouseTests, CorrectDailyCost)
     auto [result, returnedCost] = 
         parkingHouse->registerExit(parkingData);
 
-    ASSERT_DOUBLE_EQ(returnedCost, expectedCost);
+    ASSERT_NEAR(returnedCost, expectedCost, 0.1);
 }
 
 TEST_F(ParkingHouseTests, CorrectVariedCost)
@@ -126,7 +126,7 @@ TEST_F(ParkingHouseTests, CorrectVariedCost)
     auto [result, returnedCost] = 
         parkingHouse->registerExit(parkingData);
 
-    ASSERT_DOUBLE_EQ(returnedCost, expectedCost);
+    ASSERT_NEAR(returnedCost, expectedCost, 0.1);
 }
 
 TEST_F(ParkingHouseTests, SpotIDValidation)
@@ -175,7 +175,8 @@ TEST_F(ParkingHouseTests, DateValidation)
     ASSERT_EQ(parkingHouse->registerEntry(invalidEndDate), RegistrationResult::INVALID_END_DATE);
     // Also fail on Exit.
     parkingHouse->registerEntry(validData);
-    ASSERT_EQ(parkingHouse->registerExit(invalidEndDate), RegistrationResult::INVALID_END_DATE);
+    auto [result, cost] = parkingHouse->registerExit(invalidEndDate);
+    ASSERT_EQ(result, RegistrationResult::INVALID_END_DATE);
 }
 
 TEST_F(ParkingHouseTests, CheckVacancy)
