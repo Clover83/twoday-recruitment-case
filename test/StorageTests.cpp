@@ -3,12 +3,12 @@
 #include "IParkingStorage.h"
 #include "ExampleStorage.h"
 
-class StorageTest : public testing::Test
+class StorageTests : public testing::Test
 {
 protected:
     std::shared_ptr<IParkingStorage> storage;
     ParkingData mockData;
-    StorageTest()
+    void SetUp() override
     {
         using namespace std::chrono;
         auto now = system_clock::now();
@@ -22,15 +22,11 @@ protected:
     }
 };
 
-TEST_F(StorageTest, Store)
+TEST_F(StorageTests, StoreAndRetrieve)
 {
     ASSERT_TRUE(storage->store(mockData));
-}
 
-TEST_F(StorageTest, Retrieve)
-{
     auto maybeData = storage->retrieve(mockData.spotID);
     ASSERT_TRUE(maybeData);
     ASSERT_TRUE(maybeData.value() == mockData);
-
 }

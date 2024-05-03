@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "ParkingData.h"
 
-TEST(ParkingDataTest, InitCorrectness)
+TEST(ParkingDataTests, InitCorrectness)
 {
     ParkingData a;
     ParkingData b;
@@ -10,7 +10,7 @@ TEST(ParkingDataTest, InitCorrectness)
     ASSERT_FALSE(a.endTime);
 }
 
-TEST(ParkingDataTest, EqualityWithoutTime)
+TEST(ParkingDataTests, EqualityWithoutTime)
 {
     ParkingData a;
     ParkingData b;
@@ -22,7 +22,7 @@ TEST(ParkingDataTest, EqualityWithoutTime)
     ASSERT_TRUE(a == b);
 }
 
-TEST(ParkingDataTest, EqualityWithTime)
+TEST(ParkingDataTests, EqualityWithTime)
 {
     using namespace std::chrono;
     using std::make_optional, std::optional, std::time_t;

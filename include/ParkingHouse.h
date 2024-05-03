@@ -2,6 +2,7 @@
 
 #include <unordered_map>
 #include <memory>
+#include <chrono>
 #include "ParkingData.h"
 #include "IParkingStorage.h"
 
@@ -9,13 +10,18 @@ struct ParkingHouseInfo
 {
     int numFloors = 3;
     int spotsPerFloor = 15;
-    float costPerHour = 15.0f;
-    float costPerDay = 50.0f;
+    double costPerHour = 15.0f;
+    double costPerDay = 50.0f;
+    int getTotalSpots()
+    {
+        return numFloors * spotsPerFloor;
+    }
 };
 
-enum class RegistrationReturn
+enum class RegistrationResult
 {
     VALID,
+    OCCUPIED,
     INVALID_ID,
     INVALID_LICENSE_PLATE,
     LICENSE_PLATE_NOT_FOUND,
@@ -28,12 +34,12 @@ enum class RegistrationReturn
 class ParkingHouse
 {
 public:
-    ParkingHouse();
     ParkingHouse(ParkingHouseInfo data, std::shared_ptr<IParkingStorage> storageInterface);
 
-    RegistrationReturn registerEntry(ParkingData data);
-    RegistrationReturn registerExit(int spotID);
-    float getCostFor(int spotID);
+    RegistrationResult registerEntry(ParkingData data);
+    std::pair<RegistrationResult, double> registerExit(ParkingData data);
+    double getCost(time_t seconds);
+    bool isSpotVacant(int spotID);
 
 private:
     ParkingHouseInfo houseInfo;
