@@ -10,8 +10,8 @@ struct ParkingHouseInfo
 {
     int numFloors = 3;
     int spotsPerFloor = 15;
-    double costPerHour = 15.0f;
-    double costPerDay = 50.0f;
+    double costPerHour = 15.0;
+    double costPerDay = 50.0;
     int getTotalSpots()
     {
         return numFloors * spotsPerFloor;
@@ -38,7 +38,7 @@ public:
 
     RegistrationResult registerEntry(ParkingData data);
     std::pair<RegistrationResult, double> registerExit(ParkingData data);
-    double getCost(time_t seconds);
+    double getCost(time_t secondsParked);
     bool isSpotVacant(int spotID);
 
 private:

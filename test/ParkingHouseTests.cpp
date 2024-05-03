@@ -49,6 +49,11 @@ protected:
             (4.0 + 17.0/60.0 + 42.0/3600.0) * houseInfo.costPerHour;
     }
 
+    void TearDown() override
+    {
+        printf("Foo\n");
+    }
+
     // Gets valid data but without the endTime set.
     ParkingData getValidParkingData()
     {

@@ -10,8 +10,6 @@ struct ParkingData
     std::string licensePlate = "";
     std::optional<std::time_t> startTime;
     std::optional<std::time_t> endTime;
-    bool hasBeenProcessed = false;
-
 
     ParkingData() = default;
 
