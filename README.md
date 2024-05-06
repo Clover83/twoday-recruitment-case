@@ -1,6 +1,6 @@
 # twoday-recruitment-case
 ## Assumptions
-The main assumption I've made is that point of the exercise was writing the logic, tests, and dealing with flexible requirements. Not setting up a database, UI, or CLI. As such, the tests can be seen as examples of how to use the system.
+The main assumption I've made is that the point of the exercise was writing the logic, test cases, and dealing with flexible requirements. Not setting up a database, UI, or CLI. As such, the tests can be seen as examples of how to use the system.
 
 ## Structure
 I started by thinking about how I would want users of the system to be able to use it. I imagined a scenario where the backend receives some data from a web form and shuttles it to the parking system.
