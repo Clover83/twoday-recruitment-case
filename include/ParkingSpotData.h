@@ -1,20 +1,19 @@
 #pragma once
 #include <chrono>
 #include <string>
-#include <optional>
 
 using SpotID = int;
 
+/// @brief The data the user will fill in during exit/entry.
 struct ParkingSpotData
 {
     SpotID spotID = -1;
     std::string licensePlate = "";
-    std::optional<std::time_t> startTime;
-    std::optional<std::time_t> endTime;
+    time_t timeStamp;
 
     ParkingSpotData() = default;
-    ParkingSpotData(SpotID spotID, const std::string& licensePlate)
-        : spotID(spotID), licensePlate(licensePlate) {}
+    ParkingSpotData(SpotID spotID, const std::string& licensePlate, time_t timeStamp)
+        : spotID(spotID), licensePlate(licensePlate), timeStamp(timeStamp) {}
 
     friend bool operator==(const ParkingSpotData& rhs, const ParkingSpotData& lhs) 
     {
@@ -22,9 +21,7 @@ struct ParkingSpotData
             return false;
         if (rhs.licensePlate != lhs.licensePlate)
             return false;
-        if (rhs.startTime != lhs.startTime)
-            return false;
-        if (rhs.endTime != lhs.endTime)
+        if (rhs.timeStamp != lhs.timeStamp)
             return false;
         return true;
     }

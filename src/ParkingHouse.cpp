@@ -62,35 +62,14 @@ RangeCheckResult ParkingHouse::checkLimits(const ParkingSpotData &spotData) cons
     if (spotData.spotID < 0 || spotData.spotID > spotCount)
         return RangeCheckResult::InvalidID;
 
-    if (!spotData.startTime.has_value()) 
-        return RangeCheckResult::InvalidStartTime;
-
-    if (spotData.endTime.has_value() && spotData.endTime.value() <= spotData.startTime.value())
-        return RangeCheckResult::InvalidEndTime;
-
     return RangeCheckResult::Valid;
 }
 
 std::pair<RangeCheckResult, time_t> ParkingHouse::getSecondsParked(const ParkingSpotData& oldData, const ParkingSpotData& newData)
 {
-    time_t startTime;
-    if (oldData.startTime.has_value())
-        startTime = oldData.startTime.value();
-    else if (newData.startTime.has_value())
-        startTime = newData.startTime.value();
-    else
-        return {RangeCheckResult::InvalidStartTime, 0};
+    if (newData.timeStamp < oldData.timeStamp)
+        return {RangeCheckResult::InvalidEndTime, 0};
 
-    time_t endTime;
-    if (newData.endTime.has_value())
-        endTime = newData.endTime.value();
-    else if (oldData.startTime.has_value())
-        endTime = oldData.endTime.value();
-    else
-        return {RangeCheckResult::InvalidEndTime, 0};
-    
-    if (endTime <= startTime)
-        return {RangeCheckResult::InvalidEndTime, 0};
-    
-    return {RangeCheckResult::Valid, endTime - startTime};
+    time_t secondsParked = newData.timeStamp - oldData.timeStamp;
+    return {RangeCheckResult::Valid, secondsParked};
 }

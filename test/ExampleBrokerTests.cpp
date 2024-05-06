@@ -15,8 +15,15 @@ class ExampleBrokerTest : public testing::Test
 {
 public:
     ExampleDataBroker broker;
+    time_t mockTime;
 
-    BrokerTestInsertResult getInsertResults(const ParkingSpotData& data)
+    void SetUp() override
+    {
+        using namespace std::chrono;
+        mockTime = system_clock::to_time_t(system_clock::now());
+    }
+
+    BrokerTestInsertResult GetInsertResults(const ParkingSpotData& data)
     {
         auto [resultPreInsert, foundDataPre] = broker.findSpot(data);
 
@@ -31,8 +38,8 @@ public:
 
 TEST_F(ExampleBrokerTest, VacantEntry)
 {
-    ParkingSpotData validEntry(10, "ABC123");
-    auto results = getInsertResults(validEntry);
+    ParkingSpotData validEntry(10, "ABC123", mockTime);
+    auto results = GetInsertResults(validEntry);
 
     ASSERT_EQ(results.preInsert, BrokerResult::Vacant)
         << "Spot is not vacant pre-insertion.";
@@ -44,11 +51,11 @@ TEST_F(ExampleBrokerTest, VacantEntry)
 
 TEST_F(ExampleBrokerTest, OccupiedEntry)
 {
-    ParkingSpotData firstEntry(10, "ABC123");
-    ParkingSpotData secondEntry(10, "DEF456");
+    ParkingSpotData firstEntry(10, "ABC123", mockTime);
+    ParkingSpotData secondEntry(10, "DEF456", mockTime);
 
     broker.onValidEntry(firstEntry);
-    auto results = getInsertResults(secondEntry);
+    auto results = GetInsertResults(secondEntry);
 
     ASSERT_EQ(results.preInsert, BrokerResult::Occupied)
         << "Spot is not occupied pre-insertion.";
@@ -58,8 +65,8 @@ TEST_F(ExampleBrokerTest, OccupiedEntry)
 
 TEST_F(ExampleBrokerTest, LicensePlateCollision)
 {
-    ParkingSpotData firstEntry(10, "ABC123");
-    ParkingSpotData secondEntry(15, "ABC123");
+    ParkingSpotData firstEntry(10, "ABC123", mockTime);
+    ParkingSpotData secondEntry(15, "ABC123", mockTime);
 
     broker.onValidEntry(firstEntry);
     auto [result, _] = broker.findSpot(secondEntry);

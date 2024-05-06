@@ -62,8 +62,8 @@ public:
             11.0 / 3600.0);
 
         // Prepare valid entry data.
-        validEntryData = ParkingSpotData(5, "ABC123");
-        validEntryData.startTime = currentTime;
+        validEntryData = ParkingSpotData(5, "ABC123", currentTime);
+        validEntryData.timeStamp = currentTime;
     }
 
     double GetHoursCount(time_t start, time_t end)
@@ -77,9 +77,7 @@ public:
 
 TEST_F(ParkingHouseTest, ValidEntry)
 {
-    ParkingSpotData validData(5, "ABC123");
-    validData.startTime = currentTime;
-    EntryResult result = house.processEntry(validData);
+    EntryResult result = house.processEntry(validEntryData);
 
     ASSERT_TRUE(result.isValid)
         << "result.isValid is false.";
@@ -88,7 +86,7 @@ TEST_F(ParkingHouseTest, ValidEntry)
 TEST_F(ParkingHouseTest, EntryIDOutOfRangeHigh)
 {
     int spotCount = houseInfo.floorCount * houseInfo.spotsPerFloor;
-    ParkingSpotData invalidData(spotCount + 15, "ABC123");
+    ParkingSpotData invalidData(spotCount + 15, "ABC123", currentTime);
     EntryResult result = house.processEntry(invalidData);
 
     ASSERT_FALSE(result.isValid)
@@ -104,7 +102,7 @@ TEST_F(ParkingHouseTest, EntryIDOutOfRangeHigh)
 
 TEST_F(ParkingHouseTest, EntryIDOutOfRangeLow)
 {
-    ParkingSpotData invalidData(-5, "DEF456");
+    ParkingSpotData invalidData(-5, "DEF456", currentTime);
     EntryResult result = house.processEntry(invalidData);
 
     ASSERT_FALSE(result.isValid)
@@ -115,22 +113,6 @@ TEST_F(ParkingHouseTest, EntryIDOutOfRangeLow)
 
     ASSERT_EQ(result.errorInfo.rangeCheckResult.value(), RangeCheckResult::InvalidID)
         << "Range check did not return InvalidID.";
-}
-
-TEST_F(ParkingHouseTest, NoEntryStartTime)
-{
-    ParkingSpotData invalidData(5, "ABC123");
-    invalidData.startTime = std::nullopt;
-    EntryResult result = house.processEntry(invalidData);
-
-    ASSERT_FALSE(result.isValid)
-        << "result.isValid is true.";
-    
-    ASSERT_TRUE(result.errorInfo.rangeCheckResult.has_value())
-        << "RangeCheckResult does not contain a value.";
-
-    ASSERT_EQ(result.errorInfo.rangeCheckResult.value(), RangeCheckResult::InvalidStartTime)
-        << "Range check did not return InvalidStartTime";
 }
 
 // ---------------------------Cost Tests----------------------------
@@ -160,7 +142,7 @@ TEST_F(ParkingHouseTest, ValidExit)
     house.processEntry(validEntryData);
 
     ParkingSpotData validExitData = validEntryData;    
-    validExitData.endTime = circaFiveMinutesLater;
+    validExitData.timeStamp = circaFiveMinutesLater;
     ExitResult result = house.processExit(validExitData);
 
     ASSERT_TRUE(result.isValid)
@@ -168,33 +150,16 @@ TEST_F(ParkingHouseTest, ValidExit)
     ASSERT_NEAR(result.cost, circaFiveMinutesCost, 0.1);
 }
 
-TEST_F(ParkingHouseTest, NoExitStartTime)
-{
-    house.processEntry(validEntryData);
-
-    ParkingSpotData invalidData = validEntryData;
-    invalidData.startTime = std::nullopt;
-    invalidData.endTime = circaFiveMinutesLater;
-    ExitResult result = house.processExit(invalidData);
-
-    ASSERT_FALSE(result.isValid)
-        << "result.isValid is true.";
-    
-    ASSERT_TRUE(result.errorInfo.rangeCheckResult.has_value())
-        << "RangeCheckResult does not contain a value.";
-
-    ASSERT_EQ(result.errorInfo.rangeCheckResult.value(), RangeCheckResult::InvalidStartTime)
-        << "Range check did not return InvalidStartTime";
-}
-
 TEST_F(ParkingHouseTest, ReversedExitTimes)
 {
-    house.processEntry(validEntryData);
+    ParkingSpotData invalidEntryData = validEntryData;
+    invalidEntryData.timeStamp = circaFiveMinutesLater;
 
-    ParkingSpotData invalidData = validEntryData;
-    invalidData.startTime = circaFiveMinutesLater;
-    invalidData.endTime = currentTime;
-    ExitResult result = house.processExit(invalidData);
+    ParkingSpotData invalidExitData = validEntryData;
+    invalidExitData.timeStamp = currentTime;
+
+    house.processEntry(invalidEntryData);
+    ExitResult result = house.processExit(invalidExitData);
 
     ASSERT_FALSE(result.isValid)
         << "result.isValid is true.";
