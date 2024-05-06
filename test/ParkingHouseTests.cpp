@@ -1,199 +1,207 @@
-#include <memory>
-#include <math.h>
 #include "gtest/gtest.h"
 #include "ParkingHouse.h"
-#include "ExampleStorage.h"
+#include "ExampleDataBroker.h"
 
-// A fixture for storing data needed throughout different test blocks.
-class ParkingHouseTests : public testing::Test
+class ParkingHouseTest : public testing::Test
 {
-protected:
-    ParkingHouseInfo houseInfo;
-    std::shared_ptr<IParkingStorage> storageInterface;
-    std::shared_ptr<ParkingHouse> parkingHouse;
+public:
+    std::shared_ptr<IParkingDataBroker> dataBroker;
+    HouseInfo houseInfo;
+    ParkingHouse house = ParkingHouse(houseInfo, dataBroker);
 
-    time_t currentTime;
-    time_t fiveHourOffset;
-    time_t fiveDayOffset;
-    time_t variedOffset;
+    std::time_t currentTime;
+    std::time_t circaFiveMinutesLater;    
+    std::time_t circaFiveHoursLater;    
+    std::time_t circaFiveDaysLater;    
 
-    double fiveHourOffsetCost;
-    double fiveDayOffsetCost;
-    double variedOffsetCost;
-    
+    double circaFiveMinutesCost;    
+    double circaFiveHoursCost;    
+    double circaFiveDaysCost;    
+
+    ParkingSpotData validEntryData;
 
     void SetUp() override
     {
-        storageInterface = std::make_shared<ExampleStorage>();
-        parkingHouse = std::make_shared<ParkingHouse>(
-            ParkingHouse(houseInfo, storageInterface));
-        
         using namespace std::chrono;
+        // Set up parking house system.
+        dataBroker = std::make_shared<ExampleDataBroker>(ExampleDataBroker());
+        house = ParkingHouse(houseInfo, dataBroker);
+
+        // Set reference times.
         auto now = system_clock::now();
-        auto smallOffsetTP = now + hours(5);
-        auto largeOffsetTP = now + hours(5 * 24);
-        auto variedOffsetTP = now +
-            hours(6 * 24) +
-            hours(4) +
-            minutes(17) +
-            seconds(42);
+        auto fiveMinutes = now +
+            minutes(5) +
+            seconds(18);
+        auto fiveHours = now +
+            hours(5) +
+            minutes(18) +
+            seconds(34); 
+        auto fiveDays = now +
+            hours(5 * 24) +
+            hours(8) +
+            minutes(21) +
+            seconds(11);
+        
         currentTime = system_clock::to_time_t(now);
-        fiveHourOffset = system_clock::to_time_t(smallOffsetTP);
-        fiveDayOffset = system_clock::to_time_t(largeOffsetTP);
-        variedOffset = system_clock::to_time_t(variedOffsetTP);
+        circaFiveMinutesLater = system_clock::to_time_t(fiveMinutes);
+        circaFiveHoursLater = system_clock::to_time_t(fiveHours);
+        circaFiveDaysLater = system_clock::to_time_t(fiveDays);
 
-        fiveHourOffsetCost = 5.0 * houseInfo.costPerHour;
-        fiveDayOffsetCost = 5.0 * houseInfo.costPerDay;
-        // Calculate cost for 6 days, 4 hours, 17 minutes, 42 seconds.
-        variedOffsetCost = 6.0 * houseInfo.costPerDay +
-            (4.0 + 17.0/60.0 + 42.0/3600.0) * houseInfo.costPerHour;
+        // Corresponding cost calculations.
+        circaFiveMinutesCost = houseInfo.costPerHour * (
+            5.0 / 60.0 +
+            18.0 / 3600.0);
+        circaFiveHoursCost = houseInfo.costPerHour * (
+            5.0 +
+            18.0 / 60.0 +
+            34.0 / 3600.0);
+        circaFiveDaysCost = houseInfo.costPerDay * 5 +
+            houseInfo.costPerHour * (
+            8.0 +
+            21.0 / 60.0 +
+            11.0 / 3600.0);
+
+        // Prepare valid entry data.
+        validEntryData = ParkingSpotData(5, "ABC123");
+        validEntryData.startTime = currentTime;
     }
 
-    void TearDown() override
+    double GetHoursCount(time_t start, time_t end)
     {
-        printf("Foo\n");
-    }
-
-    // Gets valid data but without the endTime set.
-    ParkingData getValidParkingData()
-    {
-        ParkingData data;
-        data.spotID = 10;
-        data.licensePlate = "AAA123";
-        data.startTime = currentTime;
-        return data;
+        time_t difference = end - start;
+        return static_cast<double>(difference) / 60.0;
     }
 };
 
-TEST_F(ParkingHouseTests, RegisterValidEntry)
-{
-    ParkingData parkingData = getValidParkingData();
-    auto result = parkingHouse->registerEntry(parkingData);
-    ASSERT_EQ(result, RegistrationResult::VALID);
+// ---------------------------Entry Tests---------------------------
 
-    auto storageData = storageInterface->retrieve(parkingData);
-    ASSERT_TRUE(storageData.has_value());
-    ASSERT_EQ(parkingData, storageData.value());
+TEST_F(ParkingHouseTest, ValidEntry)
+{
+    ParkingSpotData validData(5, "ABC123");
+    validData.startTime = currentTime;
+    EntryResult result = house.processEntry(validData);
+
+    ASSERT_TRUE(result.isValid)
+        << "result.isValid is false.";
+}
+
+TEST_F(ParkingHouseTest, EntryIDOutOfRangeHigh)
+{
+    int spotCount = houseInfo.floorCount * houseInfo.spotsPerFloor;
+    ParkingSpotData invalidData(spotCount + 15, "ABC123");
+    EntryResult result = house.processEntry(invalidData);
+
+    ASSERT_FALSE(result.isValid)
+        << "result.isValid is true.";
+
+    ASSERT_TRUE(result.errorInfo.rangeCheckResult.has_value())
+        << "RangeCheckResult does not contain a value.";
+
+    ASSERT_EQ(result.errorInfo.rangeCheckResult.value(), RangeCheckResult::InvalidID)
+        << "Range check did not return InvalidID.";
 }
 
 
-TEST_F(ParkingHouseTests, RegisterValidExit)
+TEST_F(ParkingHouseTest, EntryIDOutOfRangeLow)
 {
-    ParkingData parkingData = getValidParkingData();
-    parkingHouse->registerEntry(parkingData);
+    ParkingSpotData invalidData(-5, "DEF456");
+    EntryResult result = house.processEntry(invalidData);
 
-    parkingData.endTime = fiveHourOffset;
-    auto [result, returnedCost] = 
-        parkingHouse->registerExit(parkingData);
-
-    ASSERT_EQ(result, RegistrationResult::VALID);
-
-    ASSERT_TRUE(parkingData.startTime && parkingData.endTime.has_value())
-        << "Start and/or end time optional is empty.";
-
-    time_t secondsParked = parkingData.endTime.value() - parkingData.startTime.value();
-    ASSERT_GT(secondsParked, 0);
-}
-
-TEST_F(ParkingHouseTests, CorrectHourlyCost)
-{
-    ParkingData parkingData = getValidParkingData();
-    parkingHouse->registerEntry(parkingData);
-
-    double expectedCost = fiveHourOffsetCost;
-    parkingData.endTime = fiveHourOffset;
-    auto [result, returnedCost] = 
-        parkingHouse->registerExit(parkingData);
-
-    ASSERT_NEAR(returnedCost, expectedCost, 0.1);
-}
-
-TEST_F(ParkingHouseTests, CorrectDailyCost)
-{
-    ParkingData parkingData = getValidParkingData();
-    parkingHouse->registerEntry(parkingData);
-
-    double expectedCost = fiveDayOffsetCost;
-    parkingData.endTime = fiveDayOffset;
-    auto [result, returnedCost] = 
-        parkingHouse->registerExit(parkingData);
-
-    ASSERT_NEAR(returnedCost, expectedCost, 0.1);
-}
-
-TEST_F(ParkingHouseTests, CorrectVariedCost)
-{
-    ParkingData parkingData = getValidParkingData();
-    parkingHouse->registerEntry(parkingData);
-
-    double expectedCost = variedOffsetCost;
-    parkingData.endTime = variedOffset;
-    auto [result, returnedCost] = 
-        parkingHouse->registerExit(parkingData);
-
-    ASSERT_NEAR(returnedCost, expectedCost, 0.1);
-}
-
-TEST_F(ParkingHouseTests, SpotIDValidation)
-{
-    ParkingData validData = getValidParkingData();
-
-    ParkingData invalidIDLow = validData;
-    invalidIDLow.spotID = -50;
+    ASSERT_FALSE(result.isValid)
+        << "result.isValid is true.";
     
-    ParkingData invalidIDHigh = validData;
-    invalidIDHigh.spotID = houseInfo.getTotalSpots() + 1000;
+    ASSERT_TRUE(result.errorInfo.rangeCheckResult.has_value())
+        << "RangeCheckResult does not contain a value.";
 
-    ASSERT_EQ(
-        parkingHouse->registerEntry(invalidIDLow),
-        RegistrationResult::INVALID_ID);
-
-    ASSERT_EQ(
-        parkingHouse->registerEntry(invalidIDHigh),
-        RegistrationResult::INVALID_ID);
-
+    ASSERT_EQ(result.errorInfo.rangeCheckResult.value(), RangeCheckResult::InvalidID)
+        << "Range check did not return InvalidID.";
 }
 
-TEST_F(ParkingHouseTests, LicensePlateValidation)
+TEST_F(ParkingHouseTest, NoEntryStartTime)
 {
-    ParkingData unregisteredLicencePlate = getValidParkingData();
-    unregisteredLicencePlate.licensePlate = "AAAAAA";
-    ASSERT_EQ(
-        parkingHouse->registerEntry(unregisteredLicencePlate), 
-        RegistrationResult::LICENSE_PLATE_NOT_FOUND);
-}
+    ParkingSpotData invalidData(5, "ABC123");
+    invalidData.startTime = std::nullopt;
+    EntryResult result = house.processEntry(invalidData);
 
-TEST_F(ParkingHouseTests, DateValidation)
-{
-    // Cannot register without valid start date.
-    ParkingData validData = getValidParkingData();
-    ParkingData invalidStartDate = validData;
-    invalidStartDate.startTime = std::nullopt;
-    ASSERT_EQ(parkingHouse->registerEntry(invalidStartDate), RegistrationResult::INVALID_START_DATE);
-
-    // End time cannot be before start time.
-    ParkingData invalidEndDate = validData;
-    invalidEndDate.startTime = variedOffset;
-    invalidEndDate.endTime = currentTime; 
+    ASSERT_FALSE(result.isValid)
+        << "result.isValid is true.";
     
-    // If the end date is already provided in Entry, still fail in case of future expansion.
-    ASSERT_EQ(parkingHouse->registerEntry(invalidEndDate), RegistrationResult::INVALID_END_DATE);
-    // Also fail on Exit.
-    parkingHouse->registerEntry(validData);
-    auto [result, cost] = parkingHouse->registerExit(invalidEndDate);
-    ASSERT_EQ(result, RegistrationResult::INVALID_END_DATE);
+    ASSERT_TRUE(result.errorInfo.rangeCheckResult.has_value())
+        << "RangeCheckResult does not contain a value.";
+
+    ASSERT_EQ(result.errorInfo.rangeCheckResult.value(), RangeCheckResult::InvalidStartTime)
+        << "Range check did not return InvalidStartTime";
 }
 
-TEST_F(ParkingHouseTests, CheckVacancy)
-{
-    ParkingData parkerA = getValidParkingData();
-    ParkingData parkerB = getValidParkingData();
-    parkerB.licensePlate = "AAAAAA";
-    parkerB.startTime = fiveHourOffset;
-    parkerB.endTime = fiveDayOffset;
+// ---------------------------Cost Tests----------------------------
 
-    ASSERT_TRUE(parkingHouse->isSpotVacant(parkerA.spotID));
-    parkingHouse->registerEntry(parkerA);
-    ASSERT_FALSE(parkingHouse->isSpotVacant(parkerA.spotID));
-    ASSERT_EQ(parkingHouse->registerEntry(parkerB), RegistrationResult::OCCUPIED);
+TEST_F(ParkingHouseTest, CorrectFiveMinuteCost)
+{
+    double cost = house.getCost(circaFiveMinutesLater - currentTime);
+    ASSERT_NEAR(cost, circaFiveMinutesCost, 0.1);
+}
+
+TEST_F(ParkingHouseTest, CorrectFiveHourCost)
+{
+    double cost = house.getCost(circaFiveHoursLater - currentTime);
+    ASSERT_NEAR(cost, circaFiveHoursCost, 0.1);
+}
+
+TEST_F(ParkingHouseTest, CorrectFiveDayCost)
+{
+    double cost = house.getCost(circaFiveDaysLater - currentTime);
+    ASSERT_NEAR(cost, circaFiveDaysCost, 0.1);
+}
+
+// ---------------------------Exit Tests----------------------------
+
+TEST_F(ParkingHouseTest, ValidExit)
+{
+    house.processEntry(validEntryData);
+
+    ParkingSpotData validExitData = validEntryData;    
+    validExitData.endTime = circaFiveMinutesLater;
+    ExitResult result = house.processExit(validExitData);
+
+    ASSERT_TRUE(result.isValid)
+        << "result.isValid is false.";
+    ASSERT_NEAR(result.cost, circaFiveMinutesCost, 0.1);
+}
+
+TEST_F(ParkingHouseTest, NoExitStartTime)
+{
+    house.processEntry(validEntryData);
+
+    ParkingSpotData invalidData = validEntryData;
+    invalidData.startTime = std::nullopt;
+    invalidData.endTime = circaFiveMinutesLater;
+    ExitResult result = house.processExit(invalidData);
+
+    ASSERT_FALSE(result.isValid)
+        << "result.isValid is true.";
+    
+    ASSERT_TRUE(result.errorInfo.rangeCheckResult.has_value())
+        << "RangeCheckResult does not contain a value.";
+
+    ASSERT_EQ(result.errorInfo.rangeCheckResult.value(), RangeCheckResult::InvalidStartTime)
+        << "Range check did not return InvalidStartTime";
+}
+
+TEST_F(ParkingHouseTest, ReversedExitTimes)
+{
+    house.processEntry(validEntryData);
+
+    ParkingSpotData invalidData = validEntryData;
+    invalidData.startTime = circaFiveMinutesLater;
+    invalidData.endTime = currentTime;
+    ExitResult result = house.processExit(invalidData);
+
+    ASSERT_FALSE(result.isValid)
+        << "result.isValid is true.";
+    
+    ASSERT_TRUE(result.errorInfo.rangeCheckResult.has_value())
+        << "RangeCheckResult does not contain a value.";
+
+    ASSERT_EQ(result.errorInfo.rangeCheckResult.value(), RangeCheckResult::InvalidEndTime)
+        << "Range check did not return InvalidEndTime";
 }

@@ -1,68 +1,102 @@
+#include <cmath>
 #include "ParkingHouse.h"
 
-ParkingHouse::ParkingHouse(ParkingHouseInfo data, std::shared_ptr<IParkingStorage> storageInterface)
-    : houseInfo(data), storageInterface(storageInterface)
+using std::nullopt;
+
+ParkingHouse::ParkingHouse(const HouseInfo & houseInfo, std::shared_ptr<IParkingDataBroker> dataBroker)
+    : houseInfo(houseInfo), dataBroker(dataBroker)
 {
-    totalSpots = houseInfo.numFloors * houseInfo.spotsPerFloor;
+
 }
 
-RegistrationResult ParkingHouse::registerEntry(ParkingData data)
+EntryResult ParkingHouse::processEntry(const ParkingSpotData &entryData)
 {
-    if (data.spotID < 0 || data.spotID > totalSpots)
-        return RegistrationResult::INVALID_ID;
+    RangeCheckResult inRangeResult = checkLimits(entryData);
+    if (inRangeResult != RangeCheckResult::Valid)
+        return EntryResult(false, inRangeResult);
 
-    if (!data.startTime.has_value())
-        return RegistrationResult::INVALID_START_DATE;
-    
-    if (!isSpotVacant(data.spotID))
-        return RegistrationResult::OCCUPIED;
+    auto [brokerResult, _] = dataBroker->findSpot(entryData);
+    if (brokerResult != BrokerResult::Vacant)
+        return EntryResult(false, brokerResult);
 
-    storageInterface->store(data);
-    return RegistrationResult::VALID;
+    dataBroker->onValidEntry(entryData);
+    return EntryResult(true);
 }
 
-std::pair<RegistrationResult, double> ParkingHouse::registerExit(ParkingData data)
+ExitResult ParkingHouse::processExit(const ParkingSpotData &exitData)
 {
-    auto maybeFound = storageInterface->retrieve(data);
-    if (!maybeFound.has_value())
-        return {RegistrationResult::COULD_NOT_RETRIEVE_DATA, 0.0};
-    ParkingData found = maybeFound.value();
-    
-    if (!found.startTime.has_value())
-        return {RegistrationResult::INVALID_START_DATE, 0.0};
+    RangeCheckResult inRangeResult = checkLimits(exitData);
+    if (inRangeResult != RangeCheckResult::Valid)
+        return ExitResult(false, 0.0, inRangeResult);
 
-    if (!found.endTime.has_value() || data.endTime < found.startTime)
-        return {RegistrationResult::INVALID_END_DATE, 0.0};
-    
-    time_t timeParked = data.endTime.value() - found.startTime.value();
-    return {RegistrationResult::VALID, getCost(timeParked)};
+    auto [brokerResult, entryData] = dataBroker->findSpot(exitData);
+    if (brokerResult != BrokerResult::Occupied)
+        return ExitResult(false, 0.0, brokerResult);
+
+    if (!entryData.startTime.has_value() && !exitData.startTime.has_value())
+        return ExitResult(false, 0.0, RangeCheckResult::InvalidStartTime);
+
+    if (!entryData.endTime.has_value() && !exitData.endTime.has_value())
+        return ExitResult(false, 0.0, RangeCheckResult::InvalidEndTime);
+
+    auto [timeCheckResult, secondsParked] = getSecondsParked(entryData, exitData);
+    if (timeCheckResult != RangeCheckResult::Valid)
+        return ExitResult(false, 0.0, timeCheckResult);
+
+    double cost = getCost(secondsParked);
+    dataBroker->onValidExit(exitData);
+    return ExitResult(true, cost);
 }
 
-double ParkingHouse::getCost(time_t secondsParked)
+double ParkingHouse::getCost(int secondsParked) const
 {
     if (secondsParked <= 0)
         return 0.0;
-    double hoursParked = secondsParked / 60.0;
-    double expectedCost = hoursParked * houseInfo.costPerHour;
-    if (hoursParked > 24.0)
-    {
-        double daysParked = hoursParked / 24.0;
-        double wholeDays, remainderDays;
-        remainderDays = modf(daysParked, &wholeDays);
-
-        expectedCost = remainderDays * houseInfo.costPerDay;
-        if (remainderDays > 0.0)
-        {
-            expectedCost += remainderDays * 24.0 * houseInfo.costPerHour;
-        }
-    }
-    return expectedCost;
+    
+    double hoursParked = static_cast<double>(secondsParked) / 3600.0;
+    if (hoursParked <= 24.0)
+        return hoursParked * houseInfo.costPerHour;
+    
+    int fullDays = static_cast<int>(hoursParked / 24.0);
+    double remainingHours = std::fmod(hoursParked, 24.0);
+    return fullDays * houseInfo.costPerDay + remainingHours * houseInfo.costPerHour;
 }
 
-bool ParkingHouse::isSpotVacant(int spotID)
+RangeCheckResult ParkingHouse::checkLimits(const ParkingSpotData &spotData) const
 {
-    ParkingData searcher = ParkingData();
-    searcher.spotID = spotID;
-    auto found = storageInterface->retrieve(searcher);
-    return !found.has_value();
+    int spotCount = houseInfo.floorCount * houseInfo.spotsPerFloor;
+    if (spotData.spotID < 0 || spotData.spotID > spotCount)
+        return RangeCheckResult::InvalidID;
+
+    if (!spotData.startTime.has_value()) 
+        return RangeCheckResult::InvalidStartTime;
+
+    if (spotData.endTime.has_value() && spotData.endTime.value() <= spotData.startTime.value())
+        return RangeCheckResult::InvalidEndTime;
+
+    return RangeCheckResult::Valid;
+}
+
+std::pair<RangeCheckResult, time_t> ParkingHouse::getSecondsParked(const ParkingSpotData& oldData, const ParkingSpotData& newData)
+{
+    time_t startTime;
+    if (oldData.startTime.has_value())
+        startTime = oldData.startTime.value();
+    else if (newData.startTime.has_value())
+        startTime = newData.startTime.value();
+    else
+        return {RangeCheckResult::InvalidStartTime, 0};
+
+    time_t endTime;
+    if (newData.endTime.has_value())
+        endTime = newData.endTime.value();
+    else if (oldData.startTime.has_value())
+        endTime = oldData.endTime.value();
+    else
+        return {RangeCheckResult::InvalidEndTime, 0};
+    
+    if (endTime <= startTime)
+        return {RangeCheckResult::InvalidEndTime, 0};
+    
+    return {RangeCheckResult::Valid, endTime - startTime};
 }
