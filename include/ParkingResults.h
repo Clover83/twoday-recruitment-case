@@ -1,6 +1,7 @@
 #pragma once
 #include <optional>
 
+/// @brief Status codes returned by a data broker.
 enum class BrokerResult
 {
     Vacant,
@@ -12,6 +13,7 @@ enum class BrokerResult
     CouldNotAccessData
 };
 
+/// @brief Status codes returned by the parking house system.
 enum class RangeCheckResult
 {
     Valid,
@@ -20,6 +22,7 @@ enum class RangeCheckResult
     InvalidEndTime
 };
 
+/// @brief Error data for entry/exit results.
 struct RegistrationError
 {
     std::optional<BrokerResult> brokerResult; 
@@ -34,6 +37,7 @@ struct RegistrationError
         : brokerResult(brokerResult) {}
 };
 
+/// @brief Whether the entry was processed correctly, and any error info if it wasn't.
 struct EntryResult
 {
     bool isValid = false;
@@ -49,6 +53,7 @@ struct EntryResult
         : isValid(isValid), errorInfo(brokerResult) {}
 };
 
+/// @brief Whether the exit was processed correctly, its cost, and any error info if it failed to process.
 struct ExitResult
 {
     bool isValid;

@@ -16,10 +16,8 @@ public:
     virtual std::pair<BrokerResult, ParkingSpotData> findSpot(const ParkingSpotData& dataToSearchFor) const = 0;
 
     /// @brief Is called when an entry has been validated and can be stored.
-    /// @param entryData 
     virtual void onValidEntry(const ParkingSpotData& entryData) = 0;
 
     /// @brief Is called when an exit has been validated and can be stored.
-    /// @param exitData 
     virtual void onValidExit(const ParkingSpotData& exitData) = 0;
 };

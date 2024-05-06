@@ -33,12 +33,6 @@ ExitResult ParkingHouse::processExit(const ParkingSpotData &exitData)
     if (brokerResult != BrokerResult::Occupied)
         return ExitResult(false, 0.0, brokerResult);
 
-    if (!entryData.startTime.has_value() && !exitData.startTime.has_value())
-        return ExitResult(false, 0.0, RangeCheckResult::InvalidStartTime);
-
-    if (!entryData.endTime.has_value() && !exitData.endTime.has_value())
-        return ExitResult(false, 0.0, RangeCheckResult::InvalidEndTime);
-
     auto [timeCheckResult, secondsParked] = getSecondsParked(entryData, exitData);
     if (timeCheckResult != RangeCheckResult::Valid)
         return ExitResult(false, 0.0, timeCheckResult);

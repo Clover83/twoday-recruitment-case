@@ -3,6 +3,7 @@
 #include <string>
 #include "IParkingDataBroker.h"
 
+/// @brief Example data broker which does not save data on disk.
 class ExampleDataBroker : public IParkingDataBroker
 { 
 public:
