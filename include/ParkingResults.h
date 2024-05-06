@@ -18,6 +18,7 @@ enum class RangeCheckResult
 {
     Valid,
     InvalidID,
+    UnsetTimeStamp,
     InvalidStartTime,
     InvalidEndTime
 };

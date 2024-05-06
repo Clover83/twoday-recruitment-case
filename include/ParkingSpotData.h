@@ -9,7 +9,7 @@ struct ParkingSpotData
 {
     SpotID spotID = -1;
     std::string licensePlate = "";
-    time_t timeStamp;
+    time_t timeStamp = -1;
 
     ParkingSpotData() = default;
     ParkingSpotData(SpotID spotID, const std::string& licensePlate, time_t timeStamp)

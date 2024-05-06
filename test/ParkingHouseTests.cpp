@@ -115,6 +115,25 @@ TEST_F(ParkingHouseTest, EntryIDOutOfRangeLow)
         << "Range check did not return InvalidID.";
 }
 
+TEST_F(ParkingHouseTest, DataNotAssigned)
+{
+    ParkingSpotData invalidData;
+    EntryResult result = house.processEntry(invalidData);
+
+    ASSERT_FALSE(result.isValid)
+        << "result.isValid is true.";
+    
+    ASSERT_TRUE(result.errorInfo.rangeCheckResult.has_value())
+        << "RangeCheckResult does not contain a value.";
+
+    auto response = result.errorInfo.rangeCheckResult;
+    bool isCorrectResponse =
+        response == RangeCheckResult::InvalidID ||
+        response == RangeCheckResult::UnsetTimeStamp;
+    ASSERT_TRUE(isCorrectResponse)
+        << "Range check did not return InvalidID or UnsetTimeStamp.";
+}
+
 // ---------------------------Cost Tests----------------------------
 
 TEST_F(ParkingHouseTest, CorrectFiveMinuteCost)

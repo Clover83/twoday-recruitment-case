@@ -36,5 +36,5 @@ public:
 private:
     std::shared_ptr<IParkingDataBroker> dataBroker;
     RangeCheckResult checkLimits(const ParkingSpotData& spotData) const;
-    std::pair<RangeCheckResult, time_t> getSecondsParked(const ParkingSpotData& oldData, const ParkingSpotData& newData);
+    std::pair<RangeCheckResult, time_t> getSecondsParked(const ParkingSpotData& entryData, const ParkingSpotData& exitData);
 };

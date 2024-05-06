@@ -61,15 +61,17 @@ RangeCheckResult ParkingHouse::checkLimits(const ParkingSpotData &spotData) cons
     int spotCount = houseInfo.floorCount * houseInfo.spotsPerFloor;
     if (spotData.spotID < 0 || spotData.spotID > spotCount)
         return RangeCheckResult::InvalidID;
+    if (spotData.timeStamp < 0)
+        return RangeCheckResult::UnsetTimeStamp;
 
     return RangeCheckResult::Valid;
 }
 
-std::pair<RangeCheckResult, time_t> ParkingHouse::getSecondsParked(const ParkingSpotData& oldData, const ParkingSpotData& newData)
+std::pair<RangeCheckResult, time_t> ParkingHouse::getSecondsParked(const ParkingSpotData& entryData, const ParkingSpotData& exitData)
 {
-    if (newData.timeStamp < oldData.timeStamp)
+    if (exitData.timeStamp < entryData.timeStamp)
         return {RangeCheckResult::InvalidEndTime, 0};
 
-    time_t secondsParked = newData.timeStamp - oldData.timeStamp;
+    time_t secondsParked = exitData.timeStamp - entryData.timeStamp;
     return {RangeCheckResult::Valid, secondsParked};
 }
